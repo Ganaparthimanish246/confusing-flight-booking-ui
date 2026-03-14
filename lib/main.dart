@@ -12,15 +12,20 @@ class WorstUIApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Confusing Flight Booking',
+      title: 'Premium Flights',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        scaffoldBackgroundColor: Colors.yellowAccent,
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E88E5)),
+        scaffoldBackgroundColor: const Color(0xFFF5F7FA),
+        fontFamily: 'Roboto',
       ),
       initialRoute: '/',
       routes: {
         '/': (context) => const MainLayout(),
+        '/search_maybe': (context) => const FlightSearchPage(),
         '/results': (context) => const FlightResultsPage(),
+        '/booking': (context) => const BookingPage(),
         '/payment': (context) => const PaymentPage(),
         '/confirmation': (context) => const ConfirmationPage(),
       },
@@ -30,7 +35,6 @@ class WorstUIApp extends StatelessWidget {
 
 class MainLayout extends StatefulWidget {
   const MainLayout({Key? key}) : super(key: key);
-
   @override
   State<MainLayout> createState() => _MainLayoutState();
 }
@@ -38,12 +42,12 @@ class MainLayout extends StatefulWidget {
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
 
-  // Nav mapping to confuse user
+  // Navigation looks clean, but routing is mismatched!
   final List<Widget> _pages = [
-    const BookingPage(),      // 0: label "Not Home" (icon home) -> Opens Booking
-    const ConfusingProfilePage(),   // 1: label "Find Nothing" (icon search) -> Opens Profile
-    const FlightSearchPage(), // 2: label "Maybe" (icon flight) -> Opens Search
-    const HomePage(),         // 3: label "Who am I?" (icon person) -> Opens Home
+    const BookingPage(),      // 0: Tab is "Home" but goes to Booking
+    const ProfilePage(),      // 1: Tab is "Search" but goes to Profile
+    const HomePage(),         // 2: Tab is "Profile" but goes to Home
+    const FlightSearchPage(), // 3: Tab is "Menu" but goes to Confusing Search
   ];
 
   void _onTabTapped(int index) {
@@ -60,26 +64,15 @@ class _MainLayoutState extends State<MainLayout> {
         currentIndex: _currentIndex,
         onTap: _onTabTapped,
         type: BottomNavigationBarType.fixed,
-        backgroundColor: Colors.pinkAccent,
-        selectedItemColor: Colors.greenAccent,
-        unselectedItemColor: Colors.blueAccent,
+        selectedItemColor: const Color(0xFF1E88E5),
+        unselectedItemColor: Colors.grey,
+        backgroundColor: Colors.white,
+        elevation: 10,
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home, size: 45),
-            label: 'Not Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search, size: 10),
-            label: 'Find Nothing',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.airplane_ticket, size: 25),
-            label: 'Maybe',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person, size: 60),
-            label: 'Who am I?',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Not Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Find Nothing'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Who am I?'),
+          BottomNavigationBarItem(icon: Icon(Icons.menu), label: 'Maybe'),
         ],
       ),
     );
@@ -92,8 +85,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin {
-  late AnimationController _animController;
+class _HomePageState extends State<HomePage> {
+  bool _isConfused = false;
   final Random _rand = Random();
 
   final List<String> buttonLabels = [
@@ -104,79 +97,117 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.cyanAccent,
-      body: Stack(
-        children: [
-          Center(
-            child: RotationTransition(
-              turns: _animController,
-              child: const Text(
-                'WELCOME TO USELESSNESS',
-                style: TextStyle(fontSize: 80, fontWeight: FontWeight.w900, color: Colors.orange),
-                textAlign: TextAlign.center,
+    if (_isConfused) {
+      return Scaffold(
+        backgroundColor: Colors.white,
+        body: Stack(
+          children: [
+            const Center(
+              child: Text(
+                'Wait, what did you click?',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey),
               ),
             ),
-          ),
-          ...List.generate(25, (index) {
-            double top = _rand.nextDouble() * MediaQuery.of(context).size.height * 0.9;
-            double left = _rand.nextDouble() * MediaQuery.of(context).size.width * 0.9;
-            double width = _rand.nextDouble() * 150 + 40;
-            double height = _rand.nextDouble() * 100 + 30;
-            Color color = Color((_rand.nextDouble() * 0xFFFFFF).toInt()).withOpacity(0.9);
-            
-            return Positioned(
-              top: top,
-              left: left,
-              child: InkWell(
-                onTap: () {
-                  if (index == 5) { // Secret Booking -> goes to Search vaguely
-                    Navigator.pushReplacementNamed(context, '/'); // reload main
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Try another button', style: TextStyle(color: Colors.red)), backgroundColor: Colors.yellow),
-                    );
-                  }
-                },
-                child: Container(
-                  width: width,
-                  height: height,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(_rand.nextDouble() * 50),
-                    border: Border.all(color: Colors.black, width: 2),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    buttonLabels[index % buttonLabels.length],
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: (index == 5) ? 6 : 14, // important one is tiny
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+            ...List.generate(25, (index) {
+              double top = _rand.nextDouble() * MediaQuery.of(context).size.height * 0.85;
+              double left = _rand.nextDouble() * MediaQuery.of(context).size.width * 0.8;
+              double width = _rand.nextDouble() * 120 + 60;
+              double height = _rand.nextDouble() * 40 + 30;
+              Color color = Color((_rand.nextDouble() * 0xFFFFFF).toInt()).withOpacity(0.9);
+              
+              return Positioned(
+                top: top,
+                left: left,
+                child: InkWell(
+                  onTap: () {
+                    if (index == 5) { // Secret Booking goes forward
+                      Navigator.pushNamed(context, '/search_maybe');
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Nope, try another button!')),
+                      );
+                      setState(() {}); // Reshuffle positions
+                    }
+                  },
+                  child: Container(
+                    width: width,
+                    height: height,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(8),
+                      boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(2, 2))],
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      buttonLabels[index % buttonLabels.length],
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
                     ),
                   ),
                 ),
+              );
+            }),
+          ],
+        ),
+      );
+    }
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Book Your Next Flight', style: TextStyle(fontWeight: FontWeight.bold)),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Where are you traveling to?', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600)),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, 4))],
               ),
-            );
-          }),
-        ],
+              child: Column(
+                children: [
+                  const TextField(decoration: InputDecoration(labelText: 'From', prefixIcon: Icon(Icons.flight_takeoff))),
+                  const SizedBox(height: 16),
+                  const TextField(decoration: InputDecoration(labelText: 'To', prefixIcon: Icon(Icons.flight_land))),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: const [
+                      Expanded(child: TextField(decoration: InputDecoration(labelText: 'Departure', prefixIcon: Icon(Icons.calendar_today)))),
+                      SizedBox(width: 16),
+                      Expanded(child: TextField(decoration: InputDecoration(labelText: 'Return', prefixIcon: Icon(Icons.calendar_today)))),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E88E5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                      onPressed: () {
+                        // User thinks they are searching, but boom, confusion begins!
+                        setState(() { _isConfused = true; });
+                      },
+                      child: const Text('Search Flights', style: TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -194,78 +225,55 @@ class _FlightSearchPageState extends State<FlightSearchPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.purpleAccent,
-      appBar: AppBar(title: const Text('Maybe Search?', style: TextStyle(color: Colors.black, fontSize: 8)), backgroundColor: Colors.green),
+      appBar: AppBar(title: const Text('Advanced Search'), backgroundColor: Colors.white, elevation: 1),
       body: Stack(
         children: [
-          Positioned(
-            top: 50,
-            left: 20,
-            child: const Text('USELESS TEXT', style: TextStyle(fontSize: 90, color: Colors.grey)),
-          ),
           ListView(
-            padding: const EdgeInsets.all(50),
+            padding: const EdgeInsets.all(24),
             children: [
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Passengers? who knows',
-                  fillColor: Colors.orange,
-                  filled: true,
-                ),
-              ),
-              const SizedBox(height: 100),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Date maybe?',
-                  fillColor: Colors.blueAccent,
-                  filled: true,
-                ),
-              ),
-              const SizedBox(height: -20),
-              TextField(
-                decoration: const InputDecoration(
-                  labelText: 'Where are you maybe going?',
-                  fillColor: Colors.yellow,
-                  filled: true,
-                ),
-              ),
-              const SizedBox(height: 50),
+              const TextField(decoration: InputDecoration(labelText: 'Passengers? who knows', border: OutlineInputBorder())),
+              const SizedBox(height: 20),
+              const TextField(decoration: InputDecoration(labelText: 'Date maybe?', border: OutlineInputBorder())),
+              const SizedBox(height: 20),
+              const TextField(decoration: InputDecoration(labelText: 'Where are you maybe going?', border: OutlineInputBorder())),
+              const SizedBox(height: 20),
               GestureDetector(
                 onTap: () {
-                  setState(() {
-                    _showDropdown = !_showDropdown;
-                  });
+                  setState(() => _showDropdown = !_showDropdown);
                 },
                 child: Container(
-                  color: Colors.red,
-                  padding: const EdgeInsets.all(20),
-                  child: const Text('Destination (guess it)', style: TextStyle(color: Colors.white)),
+                  height: 60,
+                  decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(4)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  alignment: Alignment.centerLeft,
+                  child: const Text('Destination (guess it)', style: TextStyle(fontSize: 16, color: Colors.black87)),
                 ),
               ),
-              const SizedBox(height: 50),
+              const SizedBox(height: 40),
               ElevatedButton(
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.black, padding: const EdgeInsets.all(2)),
-                onPressed: () {
-                  Navigator.pushNamed(context, '/results');
-                },
-                child: const Text('Don\'t Search', style: TextStyle(fontSize: 8, color: Colors.white)),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.all(16)),
+                onPressed: () => Navigator.pushNamed(context, '/results'),
+                child: const Text('Search Now', style: TextStyle(color: Colors.white, fontSize: 16)),
               ),
             ],
           ),
           if (_showDropdown)
             Positioned(
-              top: 100, // opens behind elements because of stack order
-              left: 50,
-              child: Container(
-                color: Colors.lightGreen,
-                height: 200,
-                width: 200,
-                child: ListView(
-                  children: [
-                    ListTile(title: const Text('Nowhere'), onTap: () {}),
-                    ListTile(title: const Text('Everywhere'), onTap: () {}),
-                    ListTile(title: const Text('Somewhere'), onTap: () {}),
-                  ],
+              top: 150, // Dropdown opens behind UI elements!
+              left: 20,
+              right: 20,
+              child: Material(
+                elevation: 4,
+                child: Container(
+                  color: Colors.white,
+                  height: 150,
+                  child: ListView(
+                    children: [
+                      ListTile(title: const Text('Nowhere'), onTap: () => setState(()=> _showDropdown = false)),
+                      ListTile(title: const Text('Everywhere'), onTap: () => setState(()=> _showDropdown = false)),
+                      ListTile(title: const Text('Somewhere'), onTap: () => setState(()=> _showDropdown = false)),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -307,32 +315,18 @@ class _FlightResultsPageState extends State<FlightResultsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.brown,
-      appBar: AppBar(title: const Text('Results (Maybe)', style: TextStyle(fontSize: 40)), toolbarHeight: 100, backgroundColor: Colors.indigo),
-      body: Stack(
+      appBar: AppBar(title: const Text('Flight Results'), backgroundColor: Colors.white, elevation: 1),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          Positioned(
-            top: 20,
-            left: 10,
-            child: _buildFlightCard(1, 'Airlines...', '\$999?'),
-          ),
-          Positioned(
-            top: 50,
-            left: 40,
-            child: _buildFlightCard(2, 'Oth.. Air', '\$4?'),
-          ),
-          Positioned(
-            top: 30,
-            left: 80,
-            child: _buildFlightCard(3, 'Hihihihi', '\$10000000'),
-          ),
-          Positioned(
-            bottom: 20,
-            right: 20,
-            child: ElevatedButton(
+          _buildFlightCard('Airlines...', '\$999?'),
+          _buildFlightCard('Oth.. Air', '\$4?'),
+          _buildFlightCard('HiddenAir', '\$10000000'),
+          const SizedBox(height: 20),
+          Center(
+            child: TextButton(
               onPressed: () => Navigator.pushNamed(context, '/payment'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.amber),
-              child: const Text('Maybe Later', style: TextStyle(color: Colors.black)),
+              child: const Text('Maybe Later', style: TextStyle(color: Colors.grey)),
             ),
           )
         ],
@@ -340,30 +334,29 @@ class _FlightResultsPageState extends State<FlightResultsPage> {
     );
   }
 
-  Widget _buildFlightCard(int id, String airline, String price) {
+  Widget _buildFlightCard(String airline, String price) {
     return Card(
-      color: Colors.white70,
-      elevation: 10,
-      child: Container(
-        width: 250,
-        height: 150,
-        padding: const EdgeInsets.all(8),
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(airline, style: const TextStyle(fontSize: 6, color: Colors.transparent), selectionColor: Colors.black), // Name is invisible unless selected
-            const SizedBox(height: 10),
-            Text('Price: $price', style: TextStyle(color: _priceColor, fontSize: 30, fontWeight: FontWeight.bold)),
+            Text(airline, style: const TextStyle(fontSize: 16, color: Colors.transparent), selectionColor: Colors.black), // Airline hidden unless selected
+            const SizedBox(height: 8),
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                ElevatedButton(onPressed: (){}, child: const Text('Don\'t Book')),
+                Text('Price: $price', style: TextStyle(color: _priceColor, fontSize: 24, fontWeight: FontWeight.bold)),
                 ElevatedButton(
                   onPressed: () {
-                    // Navigate to payment
-                    Navigator.pushNamed(context, '/payment');
+                    // Dodging button behavior!
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Oops, you missed it!')));
+                    Navigator.pushNamed(context, '/booking');
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  child: const Text('Book?', style: TextStyle(fontSize: 10)),
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E88E5)),
+                  child: const Text('Book?', style: TextStyle(color: Colors.white)),
                 ),
               ],
             )
@@ -381,7 +374,8 @@ class BookingPage extends StatefulWidget {
 }
 
 class _BookingPageState extends State<BookingPage> {
-  bool _isChecked = false;
+  bool _isChecked = true;
+  final _formKey = GlobalKey<FormState>();
 
   void _showRandomPopup() {
     showDialog(context: context, builder: (ctx) => AlertDialog(
@@ -389,7 +383,6 @@ class _BookingPageState extends State<BookingPage> {
       actions: [
         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Yes')),
         TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('No')),
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Banana')),
       ],
     ));
   }
@@ -397,47 +390,60 @@ class _BookingPageState extends State<BookingPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.lime,
-      appBar: AppBar(title: const Text('Not Booking'), backgroundColor: Colors.deepPurpleAccent),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('SOME USELESS TEXT THAT IS VERY LARGE', style: TextStyle(fontSize: 50, color: Colors.white), textAlign: TextAlign.center),
-            CheckboxListTile(
-              value: _isChecked,
-              onChanged: (val) {
-                setState(() => _isChecked = val!);
-                if(Random().nextBool()) {
-                  _showRandomPopup();
-                }
-              },
-              title: const Text('I do not agree', style: TextStyle(fontSize: 10)),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: () {
-                    // Cancel actually confirms booking -> goes to payment
-                    Navigator.pushNamed(context, '/payment');
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                  child: const Text('Cancel', style: TextStyle(fontSize: 20)),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    // Confirm resets form
-                    setState(() {
-                      _isChecked = false;
-                    });
-                  },
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-                  child: const Text('Confirm', style: TextStyle(fontSize: 20)),
-                ),
-              ],
-            )
-          ],
+      appBar: AppBar(title: const Text('Complete Booking'), backgroundColor: Colors.white, elevation: 1),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder())),
+              const SizedBox(height: 16),
+              TextFormField(decoration: const InputDecoration(labelText: 'Email Address', border: OutlineInputBorder())),
+              const SizedBox(height: 16),
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _isChecked,
+                onChanged: (val) {
+                  setState(() => _isChecked = val!);
+                  if(Random().nextBool()) {
+                    _showRandomPopup();
+                  }
+                },
+                title: const Text('I agree to the Terms and Conditions (Maybe)'),
+              ),
+              const Spacer(),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.all(16),
+                        side: const BorderSide(color: Colors.red),
+                      ),
+                      onPressed: () {
+                        // "Confirm" actually resets the form
+                        _formKey.currentState?.reset();
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Form Reset!')));
+                      },
+                      child: const Text('Confirm', style: TextStyle(color: Colors.red, fontSize: 16)),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.green, padding: const EdgeInsets.all(16)),
+                      onPressed: () {
+                        // "Cancel" actually proceeds!
+                        Navigator.pushNamed(context, '/payment');
+                      },
+                      child: const Text('Cancel', style: TextStyle(fontSize: 16, color: Colors.white)),
+                    ),
+                  ),
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );
@@ -456,8 +462,7 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    _progressController = AnimationController(vsync: this, duration: const Duration(seconds: 1))
-      ..repeat(); // Fake loading bar resetting repeatedly
+    _progressController = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
   }
 
   @override
@@ -469,46 +474,42 @@ class _PaymentPageState extends State<PaymentPage> with SingleTickerProviderStat
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black87,
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text('Payment Options', style: TextStyle(color: Colors.white, fontSize: 30)),
-          const SizedBox(height: 50),
-          AnimatedBuilder(
-            animation: _progressController,
-            builder: (context, child) {
-              return LinearProgressIndicator(
-                value: _progressController.value,
-                backgroundColor: Colors.red,
-                color: Colors.green,
-                minHeight: 20,
-              );
-            },
-          ),
-          const SizedBox(height: 50),
-          Wrap(
-            spacing: 20,
-            runSpacing: 20,
-            children: [
-              _payBtn('Pay Now Maybe', Colors.blue),
-              _payBtn('Pay Later Possibly', Colors.orange),
-              _payBtn('Pay Twice', Colors.purple),
-              _payBtn('Random Payment', Colors.teal),
-            ],
-          )
-        ],
+      appBar: AppBar(title: const Text('Payment'), backgroundColor: Colors.white, elevation: 1),
+      body: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Processing Payment...', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            AnimatedBuilder(
+              animation: _progressController,
+              builder: (context, child) {
+                return LinearProgressIndicator(value: _progressController.value);
+              },
+            ),
+            const SizedBox(height: 40),
+            const Text('Select Payment Method', style: TextStyle(fontSize: 16)),
+            const SizedBox(height: 16),
+            ListTile(
+              title: const Text('Pay Now Maybe'),
+              leading: Radio(value: 1, groupValue: 0, onChanged: (val){ Navigator.pushNamed(context, '/confirmation'); }),
+            ),
+            ListTile(
+              title: const Text('Pay Later Possibly'),
+              leading: Radio(value: 2, groupValue: 0, onChanged: (val){ Navigator.pushNamed(context, '/confirmation'); }),
+            ),
+            ListTile(
+              title: const Text('Pay Twice'),
+              leading: Radio(value: 3, groupValue: 0, onChanged: (val){ Navigator.pushNamed(context, '/confirmation'); }),
+            ),
+            ListTile(
+              title: const Text('Random Payment'),
+              leading: Radio(value: 4, groupValue: 0, onChanged: (val){ Navigator.pushNamed(context, '/confirmation'); }),
+            ),
+          ],
+        ),
       ),
-    );
-  }
-
-  Widget _payBtn(String text, Color color) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(backgroundColor: color, padding: const EdgeInsets.all(30)),
-      onPressed: () {
-        Navigator.pushNamed(context, '/confirmation');
-      },
-      child: Text(text, style: const TextStyle(fontSize: 10, color: Colors.white)),
     );
   }
 }
@@ -519,57 +520,63 @@ class ConfirmationPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.deepOrange,
-      body: Stack(
-        children: [
-          const Center(
-            child: Text(
+      backgroundColor: Colors.white,
+      body: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
+            const SizedBox(height: 24),
+            const Text(
               'Your flight might be booked… or maybe not.\nTry clicking random buttons to find out.',
-              style: TextStyle(fontSize: 12, color: Colors.white),
+              style: TextStyle(fontSize: 18, color: Colors.black87),
               textAlign: TextAlign.center,
             ),
-          ),
-          Positioned(top: 100, left: 10, child: const Text('Conf #1: 72A9X0', style: TextStyle(fontSize: 40))),
-          Positioned(bottom: 100, right: 30, child: const Text('Conf #2: 999999', style: TextStyle(fontSize: 30, color: Colors.yellow))),
-          Positioned(
-            bottom: 50,
-            left: 50,
-            child: ElevatedButton(
+            const SizedBox(height: 40),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(8)),
+              child: Column(
+                children: const [
+                  Text('Confirmation #1: 72A9X0', style: TextStyle(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 8),
+                  Text('Confirmation #2: 999999', style: TextStyle(color: Colors.red)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 40),
+            ElevatedButton(
               onPressed: () => Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-              child: const Text('Where am I?', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E88E5), padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15)),
+              child: const Text('Where am I?', style: TextStyle(color: Colors.white, fontSize: 16)),
             ),
-          ),
-          Positioned(
-            top: 200,
-            right: 50,
-            child: IconButton(
-              icon: const Icon(Icons.print, size: 80, color: Colors.green),
-              onPressed: () {},
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-class ConfusingProfilePage extends StatelessWidget {
-  const ConfusingProfilePage({Key? key}) : super(key: key);
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.tealAccent,
+      appBar: AppBar(title: const Text('Profile'), backgroundColor: Colors.white, elevation: 1),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.person_off, size: 200, color: Colors.red),
-            const Text('Who is this?', style: TextStyle(fontSize: 50)),
+            const Icon(Icons.person, size: 100, color: Colors.grey),
+            const SizedBox(height: 16),
+            const Text('Who is this?', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Nothing happened.')));
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile locked.')));
               },
               child: const Text('Edit Profile'),
             )
